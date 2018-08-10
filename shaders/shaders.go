@@ -1,12 +1,13 @@
 package shaders
 
 import (
+	"errors"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
 
 	"github.com/go-gl/gl/v4.6-core/gl"
-	"github.com/sajfer/graph3d/utils"
+	"github.com/sajfer/go-game/utils"
 )
 
 // Shader a shader object
@@ -16,8 +17,11 @@ type Shader struct {
 	fragmentPath string
 }
 
+var errShaderCompilationError = errors.New("Could not compile shader")
+var errShaderLinkError = errors.New("Could not link shader")
+
 // NewShader return a shader object
-func NewShader(vertexPath, fragmentPath string) *Shader {
+func NewShader(vertexPath, fragmentPath string) (*Shader, error) {
 	s := new(Shader)
 
 	vertexPath, _ = filepath.Abs(vertexPath)
@@ -47,7 +51,7 @@ func NewShader(vertexPath, fragmentPath string) *Shader {
 		log := strings.Repeat("\x00", int(logLength+1))
 		gl.GetShaderInfoLog(vertex, logLength, nil, gl.Str(log))
 		println("failed to compile %v: %v", cvertexSource, log)
-		return nil
+		return nil, errShaderCompilationError
 	}
 
 	cfragmentSource, free := gl.Strs(fragmentSourceStr)
@@ -63,7 +67,7 @@ func NewShader(vertexPath, fragmentPath string) *Shader {
 		log := strings.Repeat("\x00", int(logLength+1))
 		gl.GetShaderInfoLog(fragment, logLength, nil, gl.Str(log))
 		println("failed to compile %v: %v", cfragmentSource, log)
-		return nil
+		return nil, errShaderCompilationError
 	}
 
 	s.ID = gl.CreateProgram()
@@ -79,16 +83,17 @@ func NewShader(vertexPath, fragmentPath string) *Shader {
 		log := strings.Repeat("\x00", int(logLength+1))
 		gl.GetShaderInfoLog(fragment, logLength, nil, gl.Str(log))
 		println("failed to link: %v", log)
-		return nil
+		return nil, errShaderLinkError
 	}
 
 	gl.DeleteShader(vertex)
 	gl.DeleteShader(fragment)
 
-	return s
+	return s, nil
 }
 
-func (s *Shader) use() {
+// Use run UseProgram on shader program
+func (s *Shader) Use() {
 	gl.UseProgram(s.ID)
 }
 

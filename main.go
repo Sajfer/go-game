@@ -6,7 +6,8 @@ import (
 
 	"github.com/go-gl/gl/v4.6-core/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
-	"github.com/sajfer/graph3d/shaders"
+	"github.com/sajfer/go-game/shaders"
+	"github.com/sajfer/go-game/texture"
 )
 
 const (
@@ -16,15 +17,15 @@ const (
 
 var (
 	verticies = []float32{
-		// positions         // colors
-		0.5, -0.5, 0.0, 1.0, 0.0, 0.0, // bottom right
-		-0.5, -0.5, 0.0, 0.0, 1.0, 0.0, // bottom left
-		0.0, 0.5, 0.0, 0.0, 0.0, 1.0, // top
+		// positions         // colors		// texture coords
+		0.5, 0.5, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, // top right
+		0.5, -0.5, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, // bottom right
+		-0.5, -0.5, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, // bottom left
+		-0.5, 0.5, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, // top left
 	}
-	texCoords = []float32{
-		0.0, 0.0, // lower-left corner
-		1.0, 0.0, // lower-right corner
-		0.5, 1.0, // top-center corner
+	indices = []uint32{
+		0, 1, 3, // first triangle
+		1, 2, 3, // second triangle
 	}
 )
 
@@ -32,7 +33,9 @@ var (
 func makeVao(points []float32) uint32 {
 	var vbo uint32
 	var vao uint32
+	var ebo uint32
 	gl.GenBuffers(1, &vbo)
+	gl.GenBuffers(1, &ebo)
 	gl.GenVertexArrays(1, &vao)
 
 	gl.BindVertexArray(vao)
@@ -40,30 +43,42 @@ func makeVao(points []float32) uint32 {
 	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
 	gl.BufferData(gl.ARRAY_BUFFER, 4*len(points), gl.Ptr(points), gl.STATIC_DRAW)
 
+	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, ebo)
+	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, 24, gl.Ptr(indices), gl.STATIC_DRAW)
+
 	// position attribute
-	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 6*4, nil)
+	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 8*4, nil)
 	gl.EnableVertexAttribArray(0)
 
 	// color attribute
-	gl.VertexAttribPointer(1, 3, gl.FLOAT, false, 6*4, gl.PtrOffset(12))
+	gl.VertexAttribPointer(1, 3, gl.FLOAT, false, 8*4, gl.PtrOffset(12))
 	gl.EnableVertexAttribArray(1)
+
+	// texture attribute
+	gl.VertexAttribPointer(2, 2, gl.FLOAT, false, 8*4, gl.PtrOffset(24))
+	gl.EnableVertexAttribArray(2)
 	return vao
 }
 
-func draw(vao uint32, window *glfw.Window, program *shaders.Shader) {
+func draw(vao uint32, window *glfw.Window, shader *shaders.Shader, texture *texture.Texture) {
+	gl.ClearColor(0.2, 0.3, 0.3, 1.0)
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-	if program == nil {
+	if shader == nil {
 		println("Program NIL")
 	}
 
-	gl.UseProgram(program.ID)
+	if texture == nil {
+		println("texture NIL")
+	}
 
+	shader.Use()
+	gl.BindTexture(gl.TEXTURE_2D, texture.Handle)
 	gl.BindVertexArray(vao)
-	gl.DrawArrays(gl.TRIANGLES, 0, 3)
+	gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, nil)
 
-	glfw.PollEvents()
 	window.SwapBuffers()
+	glfw.PollEvents()
 }
 
 // initGlfw initializes glfw and returns a Window to use.
@@ -95,7 +110,7 @@ func initOpenGL() *shaders.Shader {
 	version := gl.GoStr(gl.GetString(gl.VERSION))
 	log.Println("OpenGL version", version)
 
-	prog := shaders.NewShader("shaders/vertex.glsl", "shaders/fragment.glsl")
+	prog, _ := shaders.NewShader("shaders/vertex.glsl", "shaders/fragment.glsl")
 
 	return prog
 }
@@ -108,9 +123,15 @@ func main() {
 
 	program := initOpenGL()
 
+	tex, err := texture.NewTexture("container.jpg")
+	if err != nil {
+		println("Failed to create texture", err)
+		log.Fatal(err)
+	}
+
 	vao := makeVao(verticies)
 
 	for !window.ShouldClose() {
-		draw(vao, window, program)
+		draw(vao, window, program, tex)
 	}
 }
