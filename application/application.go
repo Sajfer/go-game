@@ -18,6 +18,15 @@ type Application struct {
 	Camera *camera.Camera
 }
 
+var (
+	firstMouse         = true
+	yaw        float64 = -90
+	pitch      float64
+	lastX      float64 = 400
+	lastY      float64 = 300
+	fov        float32 = 45
+)
+
 // NewApplication Return an Application object
 func NewApplication(width, height int, title string) (*Application, error) {
 
@@ -41,6 +50,9 @@ func NewApplication(width, height int, title string) (*Application, error) {
 	}
 	window.MakeContextCurrent()
 
+	window.SetInputMode(glfw.CursorMode, glfw.CursorDisabled)
+	window.SetCursorPosCallback(a.mouseCallback)
+
 	if err := gl.Init(); err != nil {
 		panic(err)
 	}
@@ -49,11 +61,27 @@ func NewApplication(width, height int, title string) (*Application, error) {
 
 	gl.Enable(gl.DEPTH_TEST)
 
-	a.Camera, _ = camera.NewCamera()
+	a.Camera, _ = camera.NewCamera(true)
 
 	a.Window = window
 
 	return a, nil
+}
+
+func (a *Application) mouseCallback(window *glfw.Window, xpos, ypos float64) {
+
+	if firstMouse {
+		lastX = xpos
+		lastY = ypos
+		firstMouse = false
+	}
+	xoffset := xpos - lastX
+	yoffset := ypos - lastY
+	lastX = xpos
+	lastY = ypos
+
+	a.Camera.ProcessMouseMovement(xoffset, yoffset, true)
+
 }
 
 func (a *Application) Draw(vao uint32, shader *shaders.Shader, texture1 *texture.Texture, texture2 *texture.Texture) {
@@ -70,7 +98,7 @@ func (a *Application) Draw(vao uint32, shader *shaders.Shader, texture1 *texture
 	width, height := a.Window.GetSize()
 
 	model := mgl32.HomogRotate3D(float32(glfw.GetTime()), mgl32.Vec3{0.5, 1.0, 0.0})
-	view := mgl32.LookAtV(a.Camera.CameraPos, a.Camera.CameraPos.Add(a.Camera.CameraFront), a.Camera.CameraUp)
+	view := a.Camera.GetViewMatrix()
 	projection := mgl32.Perspective(mgl32.DegToRad(45), float32(width)/float32(height), 0.1, 100.0)
 
 	mvp := projection.Mul4(view).Mul4(model)
@@ -84,17 +112,23 @@ func (a *Application) Draw(vao uint32, shader *shaders.Shader, texture1 *texture
 	glfw.PollEvents()
 }
 
-func (a *Application) ProcessInput() {
+// ProcessInput Handles user input
+func (a *Application) ProcessInput(deltaTime float32) {
+
+	if a.Window.GetKey(glfw.KeyEscape) == glfw.Press {
+		a.Window.SetShouldClose(true)
+	}
+
 	if a.Window.GetKey(glfw.KeyW) == glfw.Press {
-		a.Camera.CameraPos = a.Camera.CameraPos.Add(a.Camera.CameraFront.Mul(a.Camera.CameraSpeed))
+		a.Camera.ProcessKeyboard(camera.FORWARD, deltaTime)
 	}
 	if a.Window.GetKey(glfw.KeyS) == glfw.Press {
-		a.Camera.CameraPos = a.Camera.CameraPos.Sub(a.Camera.CameraFront.Mul(a.Camera.CameraSpeed))
+		a.Camera.ProcessKeyboard(camera.BACKWARD, deltaTime)
 	}
 	if a.Window.GetKey(glfw.KeyA) == glfw.Press {
-		a.Camera.CameraPos = a.Camera.CameraPos.Sub((a.Camera.CameraFront.Cross(a.Camera.CameraUp).Normalize()).Mul(a.Camera.CameraSpeed))
+		a.Camera.ProcessKeyboard(camera.LEFT, deltaTime)
 	}
 	if a.Window.GetKey(glfw.KeyD) == glfw.Press {
-		a.Camera.CameraPos = a.Camera.CameraPos.Add((a.Camera.CameraFront.Cross(a.Camera.CameraUp).Normalize()).Mul(a.Camera.CameraSpeed))
+		a.Camera.ProcessKeyboard(camera.RIGHT, deltaTime)
 	}
 }

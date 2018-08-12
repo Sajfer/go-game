@@ -114,9 +114,15 @@ func main() {
 
 	vao := makeVao(verticies)
 
+	var deltaTime, lastFrame float32
+
 	for !app.Window.ShouldClose() {
 
-		app.ProcessInput()
+		currentFrame := float32(glfw.GetTime())
+		deltaTime = currentFrame - lastFrame
+		lastFrame = currentFrame
+
+		app.ProcessInput(deltaTime)
 		app.Draw(vao, shader, texture1, texture2)
 	}
 }
