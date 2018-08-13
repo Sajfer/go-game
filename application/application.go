@@ -2,9 +2,8 @@ package application
 
 import (
 	"log"
-	"runtime"
 
-	"github.com/go-gl/gl/v4.6-core/gl"
+	"github.com/go-gl/gl/v4.3-core/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/sajfer/go-game/camera"
@@ -14,8 +13,9 @@ import (
 
 // Application Creates window and camera
 type Application struct {
-	Window *glfw.Window
-	Camera *camera.Camera
+	Window  *glfw.Window
+	Camera  *camera.Camera
+	Shaders []*shaders.Shader
 }
 
 var (
@@ -29,14 +29,7 @@ var (
 
 // NewApplication Return an Application object
 func NewApplication(width, height int, title string) (*Application, error) {
-
-	runtime.LockOSThread()
-
 	a := new(Application)
-
-	if err := glfw.Init(); err != nil {
-		panic(err)
-	}
 
 	glfw.WindowHint(glfw.Resizable, glfw.False)
 	glfw.WindowHint(glfw.ContextVersionMajor, 4) // OR 2
@@ -46,7 +39,7 @@ func NewApplication(width, height int, title string) (*Application, error) {
 
 	window, err := glfw.CreateWindow(width, height, title, nil, nil)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	window.MakeContextCurrent()
 
@@ -54,7 +47,7 @@ func NewApplication(width, height int, title string) (*Application, error) {
 	window.SetCursorPosCallback(a.mouseCallback)
 
 	if err := gl.Init(); err != nil {
-		panic(err)
+		return nil, err
 	}
 	version := gl.GoStr(gl.GetString(gl.VERSION))
 	log.Println("OpenGL version", version)
@@ -84,7 +77,7 @@ func (a *Application) mouseCallback(window *glfw.Window, xpos, ypos float64) {
 
 }
 
-func (a *Application) Draw(vao uint32, shader *shaders.Shader, texture1 *texture.Texture, texture2 *texture.Texture) {
+func (a *Application) Draw(vao uint32, texture1 *texture.Texture, texture2 *texture.Texture) {
 	gl.ClearColor(0.2, 0.3, 0.3, 1.0)
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
@@ -93,7 +86,9 @@ func (a *Application) Draw(vao uint32, shader *shaders.Shader, texture1 *texture
 	gl.ActiveTexture(gl.TEXTURE1)
 	gl.BindTexture(gl.TEXTURE_2D, texture2.Handle)
 
-	shader.Use()
+	for _, shader := range a.Shaders {
+		shader.Use()
+	}
 
 	width, height := a.Window.GetSize()
 
@@ -103,7 +98,9 @@ func (a *Application) Draw(vao uint32, shader *shaders.Shader, texture1 *texture
 
 	mvp := projection.Mul4(view).Mul4(model)
 
-	shader.SetMat4("mvp", mvp)
+	for _, shader := range a.Shaders {
+		shader.SetMat4("mvp", mvp)
+	}
 
 	gl.BindVertexArray(vao)
 	gl.DrawArrays(gl.TRIANGLES, 0, 36)
@@ -130,5 +127,28 @@ func (a *Application) ProcessInput(deltaTime float32) {
 	}
 	if a.Window.GetKey(glfw.KeyD) == glfw.Press {
 		a.Camera.ProcessKeyboard(camera.RIGHT, deltaTime)
+	}
+}
+
+func (a *Application) AddShader(shader *shaders.Shader) {
+	a.Shaders = append(a.Shaders, shader)
+}
+
+func (a *Application) MainLoop(vao uint32, texture1 *texture.Texture, texture2 *texture.Texture) {
+
+	var deltaTime, lastFrame float32
+
+	if a.Window == nil {
+		println("NO WINDOW")
+	}
+
+	for !a.Window.ShouldClose() {
+
+		currentFrame := float32(glfw.GetTime())
+		deltaTime = currentFrame - lastFrame
+		lastFrame = currentFrame
+
+		a.ProcessInput(deltaTime)
+		a.Draw(vao, texture1, texture2)
 	}
 }

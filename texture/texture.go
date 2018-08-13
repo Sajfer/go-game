@@ -10,7 +10,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/go-gl/gl/v4.6-core/gl"
+	"github.com/go-gl/gl/v4.3-core/gl"
 )
 
 var errUnsupportedStride = errors.New("unsupported stride, only 32-bit colors supported")

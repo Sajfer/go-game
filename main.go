@@ -2,8 +2,9 @@ package main
 
 import (
 	"log"
+	"runtime"
 
-	"github.com/go-gl/gl/v4.6-core/gl"
+	"github.com/go-gl/gl/v4.3-core/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
 	"github.com/sajfer/go-game/application"
 	"github.com/sajfer/go-game/shaders"
@@ -87,15 +88,24 @@ func makeVao(points []float32) uint32 {
 
 func main() {
 
+	runtime.LockOSThread()
+
+	err := glfw.Init()
+	if err != nil {
+		panic(err)
+	}
+	defer glfw.Terminate()
+
 	app, err := application.NewApplication(windowWidth, windowHeight, "Example")
 	if err != nil {
 		println("Failed to create application", err)
 		log.Fatal(err)
 	}
-	defer glfw.Terminate()
 
-	shader, _ := shaders.NewShader("shaders/vertex.glsl", "shaders/fragment.glsl")
-
+	shader, err := shaders.NewShader("shaders/vertex.vs", "shaders/fragment.fs")
+	if err != nil {
+		log.Fatal(err)
+	}
 	texture1, err := texture.NewTexture("container.jpg")
 	if err != nil {
 		println("Failed to create texture", err)
@@ -108,21 +118,14 @@ func main() {
 		log.Fatal(err)
 	}
 
+	app.AddShader(shader)
+
 	shader.Use()
 	shader.SetInt("texture1", 0)
 	shader.SetInt("texture2", 1)
 
 	vao := makeVao(verticies)
 
-	var deltaTime, lastFrame float32
+	app.MainLoop(vao, texture1, texture2)
 
-	for !app.Window.ShouldClose() {
-
-		currentFrame := float32(glfw.GetTime())
-		deltaTime = currentFrame - lastFrame
-		lastFrame = currentFrame
-
-		app.ProcessInput(deltaTime)
-		app.Draw(vao, shader, texture1, texture2)
-	}
 }

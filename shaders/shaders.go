@@ -1,14 +1,14 @@
 package shaders
 
 import (
-	"errors"
+	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
 
 	"github.com/go-gl/mathgl/mgl32"
 
-	"github.com/go-gl/gl/v4.6-core/gl"
+	"github.com/go-gl/gl/v4.3-core/gl"
 	"github.com/sajfer/go-game/utils"
 )
 
@@ -17,74 +17,78 @@ type Shader struct {
 	ID uint32
 }
 
-var errShaderCompilationError = errors.New("Could not compile shader")
-var errShaderLinkError = errors.New("Could not link shader")
+// Program a program object
+type Program struct {
+	ID      uint32
+	shaders []*Shader
+}
+
+func readFile(path string) string {
+	path, _ = filepath.Abs(path)
+	source, err := ioutil.ReadFile(path)
+	utils.Check(err)
+
+	sourceStr := string(source) + "\x00"
+
+	return sourceStr
+}
+
+func getGlError(glHandle uint32, checkTrueParam uint32, failMsg string) error {
+
+	var status int32
+	gl.GetShaderiv(glHandle, checkTrueParam, &status)
+
+	if status == gl.FALSE {
+		var logLength int32
+		gl.GetShaderiv(glHandle, gl.INFO_LOG_LENGTH, &logLength)
+
+		logLength = 512
+
+		log := gl.Str(strings.Repeat("\x00", int(logLength+1)))
+		gl.GetShaderInfoLog(glHandle, logLength, nil, log)
+
+		return fmt.Errorf("%s%s", failMsg, gl.GoStr(log))
+	}
+	return nil
+}
+
+func compileShader(source string, shaderType uint32) (uint32, error) {
+	shader := gl.CreateShader(shaderType)
+
+	csources, free := gl.Strs(source)
+	gl.ShaderSource(shader, 1, csources, nil)
+	free()
+	gl.CompileShader(shader)
+
+	//err := getGlError(shader, gl.COMPILE_STATUS, "SHADER::COMPILE_FAILURE::")
+	//if err != nil {
+	//		return 0, err
+	//	}
+
+	return shader, nil
+}
 
 // NewShader return a shader object
 func NewShader(vertexPath, fragmentPath string) (*Shader, error) {
 	s := new(Shader)
 
-	vertexPath, _ = filepath.Abs(vertexPath)
-	fragmentPath, _ = filepath.Abs(fragmentPath)
+	vertexSourceStr := readFile(vertexPath)
+	fragmentSourceStr := readFile(fragmentPath)
 
-	vertexSource, err := ioutil.ReadFile(vertexPath)
-	utils.Check(err)
-
-	fragmentSource, err := ioutil.ReadFile(fragmentPath)
-	utils.Check(err)
-
-	vertexSourceStr := string(vertexSource) + "\x00"
-	fragmentSourceStr := string(fragmentSource) + "\x00"
-
-	var status int32
-
-	cvertexSource, free := gl.Strs(vertexSourceStr)
-	vertex := gl.CreateShader(gl.VERTEX_SHADER)
-	gl.ShaderSource(vertex, 1, cvertexSource, nil)
-	free()
-	gl.CompileShader(vertex)
-	gl.GetShaderiv(vertex, gl.COMPILE_STATUS, &status)
-	if status == gl.FALSE {
-		var logLength int32
-		gl.GetShaderiv(vertex, gl.INFO_LOG_LENGTH, &logLength)
-
-		log := strings.Repeat("\x00", int(logLength+1))
-		gl.GetShaderInfoLog(vertex, logLength, nil, gl.Str(log))
-		println("failed to compile %v: %v", cvertexSource, log)
-		return nil, errShaderCompilationError
+	vertex, err := compileShader(vertexSourceStr, gl.VERTEX_SHADER)
+	if err != nil {
+		println("Vertex: ", err.Error())
+		panic(err)
 	}
-
-	cfragmentSource, free := gl.Strs(fragmentSourceStr)
-	fragment := gl.CreateShader(gl.FRAGMENT_SHADER)
-	gl.ShaderSource(fragment, 1, cfragmentSource, nil)
-	free()
-	gl.CompileShader(fragment)
-	gl.GetShaderiv(fragment, gl.COMPILE_STATUS, &status)
-	if status == gl.FALSE {
-		var logLength int32
-		gl.GetShaderiv(fragment, gl.INFO_LOG_LENGTH, &logLength)
-
-		log := strings.Repeat("\x00", int(logLength+1))
-		gl.GetShaderInfoLog(fragment, logLength, nil, gl.Str(log))
-		println("failed to compile %v: %v", cfragmentSource, log)
-		return nil, errShaderCompilationError
+	fragment, err := compileShader(fragmentSourceStr, gl.FRAGMENT_SHADER)
+	if err != nil {
+		println("fragment: ", err.Error())
+		panic(err)
 	}
-
 	s.ID = gl.CreateProgram()
 	gl.AttachShader(s.ID, vertex)
 	gl.AttachShader(s.ID, fragment)
 	gl.LinkProgram(s.ID)
-
-	gl.GetShaderiv(fragment, gl.LINK_STATUS, &status)
-	if status == gl.FALSE {
-		var logLength int32
-		gl.GetShaderiv(fragment, gl.INFO_LOG_LENGTH, &logLength)
-
-		log := strings.Repeat("\x00", int(logLength+1))
-		gl.GetShaderInfoLog(fragment, logLength, nil, gl.Str(log))
-		println("failed to link: %v", log)
-		return nil, errShaderLinkError
-	}
 
 	gl.DeleteShader(vertex)
 	gl.DeleteShader(fragment)
