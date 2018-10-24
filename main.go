@@ -4,11 +4,12 @@ import (
 	"log"
 	"runtime"
 
+	"go-game/application"
+	"go-game/shaders"
+	"go-game/texture"
+
 	"github.com/go-gl/gl/v4.3-core/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
-	"github.com/sajfer/go-game/application"
-	"github.com/sajfer/go-game/shaders"
-	"github.com/sajfer/go-game/texture"
 )
 
 const (

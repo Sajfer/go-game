@@ -8,8 +8,9 @@ import (
 
 	"github.com/go-gl/mathgl/mgl32"
 
+	"go-game/utils"
+
 	"github.com/go-gl/gl/v4.3-core/gl"
-	"github.com/sajfer/go-game/utils"
 )
 
 // Shader a shader object

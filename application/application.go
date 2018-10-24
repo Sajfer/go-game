@@ -3,12 +3,13 @@ package application
 import (
 	"log"
 
+	"go-game/camera"
+	"go-game/shaders"
+	"go-game/texture"
+
 	"github.com/go-gl/gl/v4.3-core/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
 	"github.com/go-gl/mathgl/mgl32"
-	"github.com/sajfer/go-game/camera"
-	"github.com/sajfer/go-game/shaders"
-	"github.com/sajfer/go-game/texture"
 )
 
 // Application Creates window and camera

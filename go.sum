@@ -1,0 +1,10 @@
+github.com/go-gl/gl v0.0.0-20181020191150-629e6eb0370b h1:dxIBr5pf89Lw0vPW6BInBZKILz55foJqU4NNyPXZxMI=
+github.com/go-gl/gl v0.0.0-20181020191150-629e6eb0370b/go.mod h1:482civXOzJJCPzJ4ZOX/pwvXBWSnzD4OKMdH4ClKGbk=
+github.com/go-gl/glfw v0.0.0-20181014061658-691ee1b84c51 h1:elGSwayRx7uAsfA5PnVKeTHh+AVsUTmas0CkHOw/DSk=
+github.com/go-gl/glfw v0.0.0-20181014061658-691ee1b84c51/go.mod h1:vR7hzQXu2zJy9AVAgeJqvqgH9Q5CA+iKCZ2gyEVpxRU=
+github.com/go-gl/mathgl v0.0.0-20180804195959-cdf14b6b8f8a h1:2n5w2v3knlspzjJWyQPC0j88Mwvq0SZV0Jdws34GJwc=
+github.com/go-gl/mathgl v0.0.0-20180804195959-cdf14b6b8f8a/go.mod h1:dvrdneKbyWbK2skTda0nM4B9zSlS2GZSnjX7itr/skQ=
+github.com/sajfer/go-game v0.0.0-20180813171154-a4374c58eedb h1:240P/wlSYZM3nFPW7i4G3yrDGQ7EuV6s5jKLHmjQUzc=
+github.com/sajfer/go-game v0.0.0-20180813171154-a4374c58eedb/go.mod h1:2aqvtdBSakFL3/OYvvbwIA494NVR0b7r5V8pZetoFVQ=
+golang.org/x/image v0.0.0-20181023232108-9b1e201e7c4c h1:uQw6tuBz7vSQXHFEUgB3Cg+LRzjmVur1NgTr241HAg8=
+golang.org/x/image v0.0.0-20181023232108-9b1e201e7c4c/go.mod h1:ux5Hcp/YLpHSI86hEcLt0YII63i6oz57MZXIpbrjZUs=
