@@ -27,7 +27,7 @@ type Program struct {
 func readFile(path string) string {
 	path, _ = filepath.Abs(path)
 	source, err := ioutil.ReadFile(path)
-	utils.Check(err)
+	utils.Check(err, "Could not read file")
 
 	sourceStr := string(source) + "\x00"
 
