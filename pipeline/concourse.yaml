@@ -1,0 +1,50 @@
+resource_types:
+- name: pull-request
+  type: docker-image
+  source:
+    repository: teliaoss/github-pr-resource
+
+resources:
+- name: pull-request
+  type: pull-request
+  check_every: 1m
+  webhook_token: 123abc
+  source:
+    repository: Sajfer/go-game
+    access_token: caebcc779000104883bdec3416270cfddc320d9f
+
+jobs:
+- name: test
+  plan:
+  - get: pull-request
+    trigger: true
+    version: every
+  - put: pull-request
+    params:
+      path: pull-request
+      status: pending
+  - task: unit-test
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: {repository: golang, tag: "latest"}
+      inputs:
+        - name: pull-request
+      run:
+        path: /bin/sh
+        args:
+          - -c
+          - |
+            cd pull-request
+            make test
+            make build
+    on_failure:
+      put: pull-request
+      params:
+        path: pull-request
+        status: failure
+  - put: pull-request
+    params:
+      path: pull-request
+      status: success
