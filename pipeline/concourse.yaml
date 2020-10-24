@@ -31,7 +31,7 @@ jobs:
       params:
         path: pull-request
         status: pending
-    - task: unit-test
+    - task: build
       config:
         platform: linux
         image_resource:
