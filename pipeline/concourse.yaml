@@ -11,7 +11,7 @@ resources:
   webhook_token: 123abc
   source:
     repository: Sajfer/go-game
-    access_token: 95e9ef0d9c2da4c71ba2b4a69a9c3baa7c7807d5
+    access_token: ((token))
 
 jobs:
   - name: set-self
