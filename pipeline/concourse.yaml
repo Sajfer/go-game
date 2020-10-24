@@ -11,40 +11,50 @@ resources:
   webhook_token: 123abc
   source:
     repository: Sajfer/go-game
-    access_token: caebcc779000104883bdec3416270cfddc320d9f
+    access_token: 95e9ef0d9c2da4c71ba2b4a69a9c3baa7c7807d5
 
 jobs:
-- name: test
-  plan:
-  - get: pull-request
-    trigger: true
-    version: every
-  - put: pull-request
-    params:
-      path: pull-request
-      status: pending
-  - task: unit-test
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source: {repository: golang, tag: "latest"}
-      inputs:
-        - name: pull-request
-      run:
-        path: /bin/sh
-        args:
-          - -c
-          - |
-            cd pull-request
-            make test
-            make build
-    on_failure:
-      put: pull-request
+  - name: set-self
+    public: true
+    plan:
+      - get: concourse-examples
+        trigger: true
+      - set_pipeline: set-pipelines
+        file: pipeline/concourse.yml
+  - name: build
+    plan:
+    - get: pull-request
+      trigger: true
+      passed: [set-self]
+      version: every
+    - put: pull-request
       params:
         path: pull-request
-        status: failure
-  - put: pull-request
-    params:
-      path: pull-request
-      status: success
+        status: pending
+    - task: unit-test
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: {repository: golang, tag: "latest"}
+        inputs:
+          - name: pull-request
+        run:
+          path: /bin/sh
+          args:
+            - -c
+            - |
+              ls -al
+              apt-get install -y libgl1-mesa-dev xorg-dev
+              cd pull-request
+              make test
+              make build
+      on_failure:
+        put: pull-request
+        params:
+          path: pull-request
+          status: failure
+    - put: pull-request
+      params:
+        path: pull-request
+        status: success
