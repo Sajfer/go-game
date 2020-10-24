@@ -1,5 +1,7 @@
 module go-game
 
+go 1.15
+
 require (
 	github.com/go-gl/gl v0.0.0-20181020191150-629e6eb0370b
 	github.com/go-gl/glfw v0.0.0-20181014061658-691ee1b84c51
