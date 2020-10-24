@@ -11,16 +11,16 @@ resources:
   webhook_token: 123abc
   source:
     repository: Sajfer/go-game
-    access_token: ((token))
+    access_token: ((github_token))
 
 jobs:
   - name: set-self
     public: true
     plan:
-      - get: concourse-examples
+      - get: pull-request
         trigger: true
       - set_pipeline: set-pipelines
-        file: pipeline/concourse.yml
+        file: pull-request/pipeline/concourse.yml
   - name: build
     plan:
     - get: pull-request
